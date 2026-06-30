@@ -4,6 +4,7 @@ import { db } from "@/lib/db"
 import { userFinances, loansGiven, expenses, userCategories, userBudgetConfig } from "@/lib/schema"
 import { eq, and, or, lte, gte, sql } from "drizzle-orm"
 import { currentMonth, daysInMonth } from "@/lib/validation"
+import { daysRemaining } from "@/lib/budget"
 
 // GET /api/finances
 // Returns the user's enabled-state, wallet/bank balances, and live-computed spare
@@ -129,7 +130,11 @@ export async function GET() {
   const totalDailyBudget = dailyLimit * dInMonth
   const totalBudget = totalFixedBudget + totalDailyBudget
   const totalSpent = Number(totalSpentResult?.total ?? 0)
-  const remainingBudgetThisMonth = Math.max(0, totalBudget - totalSpent)
+  // Time-expired daily pool — days already passed can't be spent
+  const dRemaining = daysRemaining(month, new Date())
+  const daysElapsed = dInMonth - dRemaining
+  const timeExpired = dailyLimit * daysElapsed
+  const remainingBudgetThisMonth = Math.max(0, totalBudget - totalSpent - timeExpired)
   const spareMoney = walletBalance + bankBalance - remainingBudgetThisMonth
   const owedToYou = Number(owedResult?.total ?? 0)
   const outstandingLoansCount = Number(countResult?.count ?? 0)
