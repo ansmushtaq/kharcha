@@ -135,9 +135,13 @@ export async function GET(req: NextRequest) {
   const today = new Date()
   const daysRemainingThisMonth =
     month === currentMonth() ? daysRemaining(month, today) : 0
+  const daysElapsed = dInMonth - daysRemainingThisMonth
+  const timeConsumed = dailyLimit * daysElapsed
   const futurePool = dailyLimit * daysRemainingThisMonth
   const remainingDailyPool = Math.max(futurePool - variableSpent, 0)
   const effRate = effectiveDailyRate(remainingDailyPool, daysRemainingThisMonth)
+  // Ring/alert use total consumed = actual spent + time-expired daily pool
+  const totalConsumed = totalSpent + timeConsumed
 
   // Fixed category payments — use ALL expenses (not just current month)
   const fixedCatIds = new Set(fixedCategories.map((c) => c.id))
@@ -189,6 +193,7 @@ export async function GET(req: NextRequest) {
     total_fixed_budget: totalFixedBudget,
     total_budget: totalBudget,
     total_spent: totalSpent,
+    total_consumed: totalConsumed,
     over_under: totalSpent - totalBudget,
     fixed_categories: fixedCategoriesWithBalance,
     variable_breakdown: variableBreakdown.map((b) => ({

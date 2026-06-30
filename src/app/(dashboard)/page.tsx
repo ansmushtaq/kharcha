@@ -39,6 +39,7 @@ interface Summary {
   total_fixed_budget: number
   total_budget: number
   total_spent: number
+  total_consumed: number
   over_under: number
   fixed_categories: FixedCategory[]
   variable_breakdown: VariableBreakdownEntry[]
@@ -122,9 +123,9 @@ export default function DashboardPage() {
         <p className="text-sm text-muted-foreground">{summary.month}</p>
       </div>
 
-      <AlertBanner spent={summary.total_spent} budget={summary.total_budget} />
+      <AlertBanner spent={summary.total_consumed} budget={summary.total_budget} />
 
-      <BudgetOverview spent={summary.total_spent} budget={summary.total_budget} />
+      <BudgetOverview spent={summary.total_consumed} budget={summary.total_budget} />
 
       <DailyProgress
         remainingDailyPool={summary.remaining_daily_pool}
