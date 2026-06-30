@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
 import { expenses, userCategories, userBudgetConfig } from "@/lib/schema"
-import { eq, and, or, lte, gte, desc, sql, inArray } from "drizzle-orm"
+import { eq, and, or, lte } from "drizzle-orm"
 import { currentMonth, isValidMonth, daysInMonth } from "@/lib/validation"
 import { daysRemaining, effectiveDailyRate, outstandingBalance } from "@/lib/budget"
 
@@ -95,7 +95,6 @@ export async function GET(req: NextRequest) {
 
   const salary = budgetConfig[0]?.salary ?? 0
   const dailyLimit = budgetConfig[0]?.dailyLimit ?? 1200
-  const coerce = (v: unknown): number => Number(v) || 0
 
   // ── Compute everything from the single expense result set ───────────────────
 
