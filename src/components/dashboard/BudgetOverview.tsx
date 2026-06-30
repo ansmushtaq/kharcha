@@ -1,5 +1,7 @@
 "use client"
 
+import { formatPKR } from "@/lib/utils"
+
 interface Props {
   spent: number
   budget: number
@@ -20,26 +22,22 @@ const STROKE_WIDTH = 12
 const RADIUS = (SIZE - STROKE_WIDTH) / 2
 const CIRCUMFERENCE = 2 * Math.PI * RADIUS
 
-function formatPKR(n: number): string {
-  return `PKR ${n.toLocaleString("en-PK")}`
-}
-
 export function BudgetOverview({ spent, budget }: Props) {
   const percentage = budget > 0 ? Math.min((spent / budget) * 100, 100) : 0
   const isOverBudget = spent >= budget
 
-  // Colour coding: green -> yellow -> red
+  // Colour coding: success -> warning -> destructive
   let ringColorClass: string
   let labelColor: string
   if (isOverBudget) {
     ringColorClass = "stroke-destructive"
     labelColor = "text-destructive"
   } else if (percentage >= 85) {
-    ringColorClass = "stroke-yellow-500"
-    labelColor = "text-yellow-600"
+    ringColorClass = "stroke-warning"
+    labelColor = "text-warning"
   } else {
-    ringColorClass = "stroke-green-500"
-    labelColor = "text-green-600"
+    ringColorClass = "stroke-success"
+    labelColor = "text-success"
   }
 
   const offset = CIRCUMFERENCE - (percentage / 100) * CIRCUMFERENCE
@@ -90,7 +88,7 @@ export function BudgetOverview({ spent, budget }: Props) {
               {Math.round(percentage)}%
             </span>
             <span className="text-xs text-muted-foreground">
-              {formatPKR(spent)} / {formatPKR(budget)}
+              {formatPKR(spent)} / <span className="tabular-nums">{formatPKR(budget)}</span>
             </span>
           </div>
         </div>

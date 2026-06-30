@@ -9,7 +9,6 @@ import {
   char,
   text,
   index,
-  uniqueIndex,
 } from 'drizzle-orm/pg-core'
 import { relations } from 'drizzle-orm'
 
@@ -59,6 +58,8 @@ export const userCategories = pgTable(
 
 // ─── Per-User Budget Config ───────────────────────────────────────────────────
 // One row per user. Created on first login or via seed.
+// salary is informational only — shown on dashboard, does NOT affect
+// spare money or budget calculations (those use wallet/bank balances).
 
 export const userBudgetConfig = pgTable('user_budget_config', {
   id:         uuid('id').primaryKey().defaultRandom(),
@@ -66,12 +67,17 @@ export const userBudgetConfig = pgTable('user_budget_config', {
                 .notNull()
                 .references(() => users.id, { onDelete: 'cascade' })
                 .unique(),
-  dailyLimit: integer('daily_limit').notNull().default(1200), // PKR/day
+  salary:     integer('salary').notNull().default(0),          // PKR, monthly income — informational
+  dailyLimit: integer('daily_limit').notNull().default(1200),  // PKR/day
   updatedAt:  timestamp('updated_at').defaultNow().notNull(),
 })
 
 // ─── Expenses ─────────────────────────────────────────────────────────────────
 // Daily transaction log. Per-user. category_id nullable — SET NULL on category delete.
+// category_id can reference EITHER a 'fixed' or 'variable' category:
+//   - variable category → a regular daily expense
+//   - fixed category     → a payment (full or partial) against that month's
+//                          allocation; used to compute outstanding_balance
 
 export const expenses = pgTable(
   'expenses',
@@ -89,6 +95,7 @@ export const expenses = pgTable(
   },
   (table) => ({
     userDateIdx: index('exp_user_date_idx').on(table.userId, table.date),
+    userCategoryIdx: index('exp_user_category_idx').on(table.userId, table.categoryId),
   })
 )
 

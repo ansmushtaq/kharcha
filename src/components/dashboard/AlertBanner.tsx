@@ -10,8 +10,8 @@ interface Props {
  * | State      | Trigger                   | UI                         |
  * |------------|---------------------------|----------------------------|
  * | On track   | spent < 85% of budget     | Returns null (no banner)   |
- * | Warning    | 85% <= spent < 100%       | Yellow banner with message |
- * | Over budget| spent >= 100%             | Red banner with over-amount|
+ * | Warning    | 85% <= spent < 100%       | bg-warning/text-warning-fg |
+ * | Over budget| spent >= 100%             | bg-destructive/text-dest-fg|
  */
 export function AlertBanner({ spent, budget }: Props) {
   if (budget <= 0) return null
@@ -22,11 +22,9 @@ export function AlertBanner({ spent, budget }: Props) {
   if (percentage >= 100) {
     const overBy = spent - budget
     return (
-      <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-4">
-        <p className="text-sm font-medium text-destructive">
-          Over Budget!
-        </p>
-        <p className="mt-1 text-sm text-destructive/90">
+      <div className="rounded-lg bg-destructive p-4 text-destructive-foreground">
+        <p className="text-sm font-medium">Over Budget!</p>
+        <p className="mt-1 text-sm">
           Over budget by PKR {overBy.toLocaleString("en-PK")}
         </p>
       </div>
@@ -36,11 +34,9 @@ export function AlertBanner({ spent, budget }: Props) {
   // Warning (85% to < 100%)
   if (percentage >= 85) {
     return (
-      <div className="rounded-lg border border-yellow-500/50 bg-yellow-500/10 p-4">
-        <p className="text-sm font-medium text-yellow-600 dark:text-yellow-400">
-          Budget Warning
-        </p>
-        <p className="mt-1 text-sm text-yellow-600/90 dark:text-yellow-400/90">
+      <div className="rounded-lg bg-warning p-4 text-warning-foreground">
+        <p className="text-sm font-medium">Budget Warning</p>
+        <p className="mt-1 text-sm">
           You&apos;ve used {Math.round(percentage)}% of your monthly budget
         </p>
       </div>

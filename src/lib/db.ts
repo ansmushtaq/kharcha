@@ -7,7 +7,7 @@ import * as schema from './schema'
 // (postgres opens TCP sockets — Node.js only, not Edge)
 let _db: PostgresJsDatabase<typeof schema> | null = null
 
-export function getDb(): PostgresJsDatabase<typeof schema> {
+function getDb(): PostgresJsDatabase<typeof schema> {
   if (!_db) {
     const client = postgres(process.env.DATABASE_URL!, {
       ssl: process.env.DATABASE_URL?.includes('neon.tech') ? 'require' : false,

@@ -13,7 +13,9 @@ import { SpareMoneyCard } from "@/components/dashboard/SpareMoneyCard"
 interface FixedCategory {
   id: string
   name: string
-  amount: number
+  fixed_amount: number
+  paid_this_month: number
+  outstanding_balance: number
   carries_over: boolean
 }
 
@@ -26,14 +28,17 @@ interface VariableBreakdownEntry {
 
 interface Summary {
   month: string
+  salary: number
   days_in_month: number
   daily_limit: number
-  total_daily_budget: number
+  total_daily_pool: number
+  variable_spent: number
+  remaining_daily_pool: number
+  days_remaining: number
+  effective_daily_rate: number
   total_fixed_budget: number
   total_budget: number
-  total_variable_spent: number
   total_spent: number
-  today_spent: number
   over_under: number
   fixed_categories: FixedCategory[]
   variable_breakdown: VariableBreakdownEntry[]
@@ -122,11 +127,13 @@ export default function DashboardPage() {
       <BudgetOverview spent={summary.total_spent} budget={summary.total_budget} />
 
       <DailyProgress
-        spent={summary.today_spent}
+        remainingDailyPool={summary.remaining_daily_pool}
         dailyLimit={summary.daily_limit}
+        effectiveDailyRate={summary.effective_daily_rate}
+        daysRemaining={summary.days_remaining}
       />
 
-      <FixedCategoriesList categories={summary.fixed_categories} />
+      <FixedCategoriesList categories={summary.fixed_categories} onPaid={fetchSummary} />
 
       {/* SpareMoneyCard — only rendered if finances_enabled is true (handles its own fetch + check) */}
       <SpareMoneyCard />

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { fetchWithTimeout } from "@/lib/fetchWithTimeout"
+import { formatPKR } from "@/lib/utils"
 import { ChevronDown, ChevronUp } from "lucide-react"
 
 /**
@@ -73,8 +74,6 @@ export function SpareMoneyCard() {
   }
 
   // ── Data state ──
-  const formatPKR = (n: number) => `PKR ${n.toLocaleString("en-PK")}`
-
   return (
     <div className="rounded-lg border p-4">
       <div className="flex items-start justify-between">
@@ -83,7 +82,7 @@ export function SpareMoneyCard() {
             Spare Money
           </h3>
           <p
-            className={`text-2xl font-bold ${
+            className={`text-2xl font-bold tabular-nums ${
               data.spare_money >= 0 ? "" : "text-destructive"
             }`}
           >

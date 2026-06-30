@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { fetchWithTimeout } from "@/lib/fetchWithTimeout"
+import { todayString } from "@/lib/validation"
 
 interface VariableCategory {
   id: string
@@ -12,14 +13,6 @@ interface VariableCategory {
 
 interface Props {
   onSaved: () => void
-}
-
-function todayString(): string {
-  const d = new Date()
-  const y = d.getFullYear()
-  const m = String(d.getMonth() + 1).padStart(2, "0")
-  const day = String(d.getDate()).padStart(2, "0")
-  return `${y}-${m}-${day}`
 }
 
 export function ExpenseForm({ onSaved }: Props) {

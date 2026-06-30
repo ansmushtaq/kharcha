@@ -1,10 +1,11 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
-import { Trash2 } from "lucide-react"
+import { Trash2, Receipt } from "lucide-react"
 import { CategoryBadge } from "@/components/expenses/CategoryBadge"
 import { Button } from "@/components/ui/button"
 import { fetchWithTimeout } from "@/lib/fetchWithTimeout"
+import { currentMonth } from "@/lib/validation"
 
 interface ExpenseRow {
   id: string
@@ -16,6 +17,7 @@ interface ExpenseRow {
   createdAt: string
   categoryName: string | null
   categoryColor: string | null
+  categoryType: string | null
 }
 
 interface GroupedExpenses {
@@ -25,11 +27,6 @@ interface GroupedExpenses {
 interface Props {
   /** Callback to trigger a refresh. Parent can change this key to force re-fetch. */
   refreshKey: number
-}
-
-function currentMonth(): string {
-  const d = new Date()
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`
 }
 
 function formatPKR(n: number): string {
@@ -116,10 +113,12 @@ export function ExpenseList({ refreshKey }: Props) {
     grouped[exp.date].push(exp)
   }
 
-  // Compute daily totals
+  // Compute daily totals — variable expenses only (fixed payments excluded)
   const dailyTotals: Record<string, number> = {}
   for (const [date, exps] of Object.entries(grouped)) {
-    dailyTotals[date] = exps.reduce((sum, e) => sum + e.amount, 0)
+    dailyTotals[date] = exps
+      .filter((e) => e.categoryType !== "fixed")
+      .reduce((sum, e) => sum + e.amount, 0)
   }
 
   // Loading state
@@ -168,7 +167,7 @@ export function ExpenseList({ refreshKey }: Props) {
             <h3 className="text-sm font-medium text-muted-foreground">
               {formatDateHeading(date)}
             </h3>
-            <span className="text-sm font-semibold">
+            <span className="text-sm font-semibold tabular-nums">
               {formatPKR(dailyTotals[date])}
             </span>
           </div>
@@ -198,6 +197,13 @@ export function ExpenseList({ refreshKey }: Props) {
                     </p>
                   )}
                 </div>
+
+                {/* Bill icon for fixed category payments */}
+                {exp.categoryType === "fixed" && (
+                  <span title="Bill payment">
+                    <Receipt className="size-4 shrink-0 text-muted-foreground" />
+                  </span>
+                )}
 
                 {/* Amount */}
                 <span className="shrink-0 text-sm font-medium tabular-nums">

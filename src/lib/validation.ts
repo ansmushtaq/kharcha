@@ -3,16 +3,21 @@ export function currentMonth(): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`
 }
 
+/** Today as YYYY-MM-DD string. */
+export function todayString(): string {
+  const d = new Date()
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, "0")
+  const day = String(d.getDate()).padStart(2, "0")
+  return `${y}-${m}-${day}`
+}
+
 export function isValidMonth(m: string): boolean {
   return /^\d{4}-(0[1-9]|1[0-2])$/.test(m)
 }
 
-export function isValidDateFormat(d: string): boolean {
-  return /^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/.test(d)
-}
-
 export function isValidCalendarDate(d: string): boolean {
-  if (!isValidDateFormat(d)) return false
+  if (!/^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/.test(d)) return false
   // Parse as UTC midnight so the toISOString round-trip is timezone-agnostic
   const parsed = new Date(d + "T00:00:00Z")
   if (isNaN(parsed.getTime())) return false

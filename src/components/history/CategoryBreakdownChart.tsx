@@ -7,6 +7,7 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts"
+import { formatPKR, safeHex } from "@/lib/utils"
 
 interface BreakdownEntry {
   category_id: string
@@ -19,28 +20,13 @@ interface Props {
   breakdown: BreakdownEntry[]
 }
 
-/** PKR whole-number formatting. */
-function formatPKR(n: number): string {
-  return `PKR ${n.toLocaleString("en-PK")}`
-}
-
-/** Validate a hex color string. */
-const HEX_RE = /^#[0-9a-fA-F]{6}$/
-
-function safeHex(c: string | null): string | null {
-  return c && HEX_RE.test(c) ? c : null
-}
-
-/** Fallback color palette when a category has no color assigned. */
+/** Fallback colors via CSS chart vars — defined in globals.css (Ledger theme). */
 const FALLBACK_COLORS = [
-  "#6366f1", // indigo
-  "#f59e0b", // amber
-  "#ef4444", // red
-  "#8b5cf6", // violet
-  "#06b6d4", // cyan
-  "#84cc16", // lime
-  "#ec4899", // pink
-  "#14b8a6", // teal
+  "var(--chart-1)", // teal
+  "var(--chart-2)", // marigold
+  "var(--chart-3)", // coral
+  "var(--chart-4)", // plum
+  "var(--chart-5)", // sky
 ]
 
 /**

@@ -1,5 +1,7 @@
 "use client"
 
+import { formatPKR } from "@/lib/utils"
+
 interface FixedCategory {
   id: string
   name: string
@@ -9,11 +11,6 @@ interface FixedCategory {
 
 interface Props {
   categories: FixedCategory[]
-}
-
-/** PKR whole-number formatting. */
-function formatPKR(n: number): string {
-  return `PKR ${n.toLocaleString("en-PK")}`
 }
 
 export function FixedCategoriesSummary({ categories }: Props) {

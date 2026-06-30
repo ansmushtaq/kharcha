@@ -70,20 +70,25 @@ export function CategoryForm({ open, onClose, onSaved, edit }: Props) {
       : "/api/categories"
     const method = edit ? "PATCH" : "POST"
 
-    const res = await fetch(url, {
-      method,
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
-    })
+    try {
+      const res = await fetch(url, {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      })
 
-    if (res.ok) {
-      onSaved()
-      onClose()
-    } else {
-      const d = await res.json()
-      setError(d.error || "Failed to save")
+      if (res.ok) {
+        onSaved()
+        onClose()
+      } else {
+        const d = await res.json().catch(() => ({}))
+        setError(d.error || "Failed to save")
+      }
+    } catch {
+      setError("Network error — please try again")
+    } finally {
+      setSaving(false)
     }
-    setSaving(false)
   }
 
   return (

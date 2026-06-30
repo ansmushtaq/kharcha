@@ -26,7 +26,7 @@ export function CategoryTable() {
   const fetchCategories = useCallback(async () => {
     const res = await fetch("/api/categories?all=true")
     const data = await res.json()
-    setCategories(data)
+    setCategories(Array.isArray(data) ? data : [])
     setLoading(false)
   }, [])
 

@@ -1,5 +1,7 @@
 "use client"
 
+import { safeHex } from "@/lib/utils"
+
 interface Props {
   name: string | null
   color: string | null
@@ -10,12 +12,6 @@ interface Props {
  * When name is null (deleted category with SET NULL), displays "Uncategorized"
  * in muted styling. Otherwise uses the category's color as a background tint.
  */
-const HEX_RE = /^#[0-9a-fA-F]{6}$/
-
-function safeHex(c: string | null): string | null {
-  return c && HEX_RE.test(c) ? c : null
-}
-
 export function CategoryBadge({ name, color }: Props) {
   if (!name) {
     return (

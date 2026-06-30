@@ -43,6 +43,7 @@ export async function GET(req: NextRequest) {
       createdAt: expenses.createdAt,
       categoryName: userCategories.name,
       categoryColor: userCategories.color,
+      categoryType: userCategories.type,
     })
     .from(expenses)
     .leftJoin(
@@ -66,7 +67,8 @@ export async function GET(req: NextRequest) {
 
 // POST /api/expenses
 // Creates a new expense. Validates amount (positive integer), date (YYYY-MM-DD),
-// and category_id (optional, must reference a variable category owned by the user).
+// and category_id (optional, must reference a category owned by the user — both
+// 'fixed' and 'variable' types are allowed).
 export async function POST(req: NextRequest) {
   const session = await auth()
   if (!session?.user?.id) {
@@ -106,13 +108,12 @@ export async function POST(req: NextRequest) {
         and(
           eq(userCategories.id, category_id),
           eq(userCategories.userId, session.user.id),
-          eq(userCategories.type, "variable"),
         ),
       )
       .limit(1)
 
     if (!cat) {
-      return NextResponse.json({ error: "category not found or not a variable category" }, { status: 400 })
+      return NextResponse.json({ error: "category not found" }, { status: 400 })
     }
   }
 

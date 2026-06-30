@@ -1,5 +1,7 @@
 "use client"
 
+import { formatPKR } from "@/lib/utils"
+
 interface FixedCategory {
   id: string
   name: string
@@ -34,10 +36,6 @@ interface Props {
 }
 
 /** PKR whole-number formatting — matches BudgetOverview pattern. */
-function formatPKR(n: number): string {
-  return `PKR ${n.toLocaleString("en-PK")}`
-}
-
 export function MonthlySummaryCard({ summary }: Props) {
   const { total_budget: budget, total_spent: spent, over_under } = summary
 

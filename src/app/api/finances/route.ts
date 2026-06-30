@@ -20,106 +20,118 @@ export async function GET() {
 
   const userId = session.user.id
 
-  // 1. Fetch user_finances row (may not exist yet)
-  const [finances] = await db
-    .select({
-      financesEnabled: userFinances.financesEnabled,
-      walletBalance:   userFinances.walletBalance,
-      bankBalance:     userFinances.bankBalance,
-      updatedAt:       userFinances.updatedAt,
-    })
-    .from(userFinances)
-    .where(eq(userFinances.userId, userId))
-    .limit(1)
+  // ── Parallel queries ──────────────────────────────────────────────────────
+  const month = currentMonth()
+  const dInMonth = daysInMonth(month)
+  const startDate = `${month}-01`
+  const endDate = `${month}-${String(dInMonth).padStart(2, "0")}`
+
+  const [
+    financesRows,
+    budgetConfigRows,
+    fixedCategories,
+    totalSpentRows,
+    owedRows,
+    countRows,
+  ] = await Promise.all([
+    // 1. user_finances row
+    db
+      .select({
+        financesEnabled: userFinances.financesEnabled,
+        walletBalance:   userFinances.walletBalance,
+        bankBalance:     userFinances.bankBalance,
+        updatedAt:       userFinances.updatedAt,
+      })
+      .from(userFinances)
+      .where(eq(userFinances.userId, userId))
+      .limit(1),
+
+    // 2. daily_limit
+    db
+      .select({ dailyLimit: userBudgetConfig.dailyLimit })
+      .from(userBudgetConfig)
+      .where(eq(userBudgetConfig.userId, userId))
+      .limit(1),
+
+    // 3. visible fixed categories
+    db
+      .select({ amount: userCategories.fixedAmount })
+      .from(userCategories)
+      .where(
+        and(
+          eq(userCategories.userId, userId),
+          eq(userCategories.isActive, true),
+          eq(userCategories.type, "fixed"),
+          or(
+            and(
+              eq(userCategories.carriesOver, true),
+              lte(userCategories.createdForMonth, month),
+            ),
+            and(
+              eq(userCategories.carriesOver, false),
+              eq(userCategories.createdForMonth, month),
+            ),
+          ),
+        ),
+      ),
+
+    // 4. total spent for the month
+    db
+      .select({ total: sql<number>`COALESCE(SUM(${expenses.amount}), 0)` })
+      .from(expenses)
+      .where(
+        and(
+          eq(expenses.userId, userId),
+          gte(expenses.date, startDate),
+          lte(expenses.date, endDate),
+        ),
+      ),
+
+    // 5. owed_to_you — SUM of outstanding loans
+    db
+      .select({ total: sql<number>`COALESCE(SUM(${loansGiven.amount}), 0)` })
+      .from(loansGiven)
+      .where(
+        and(
+          eq(loansGiven.userId, userId),
+          eq(loansGiven.isRepaid, false),
+        ),
+      ),
+
+    // 6. outstanding loans count — merged into parallel Promise.all
+    db
+      .select({ count: sql<number>`COUNT(*)` })
+      .from(loansGiven)
+      .where(
+        and(
+          eq(loansGiven.userId, userId),
+          eq(loansGiven.isRepaid, false),
+        ),
+      ),
+  ])
+
+  const finances = financesRows[0]
+  const budgetConfig = budgetConfigRows[0]
+  const totalSpentResult = totalSpentRows[0]
+  const owedResult = owedRows[0]
+  const countResult = countRows[0]
 
   const financesEnabled = finances?.financesEnabled ?? false
   const walletBalance   = finances?.walletBalance   ?? 0
   const bankBalance     = finances?.bankBalance     ?? 0
   const updatedAt       = finances?.updatedAt       ?? null
 
-  // 2. Compute remaining budget for the current month
-  const month = currentMonth()
-  const dInMonth = daysInMonth(month)
-  const startDate = `${month}-01`
-  const endDate = `${month}-${String(dInMonth).padStart(2, "0")}`
-
-  // 2a. Fetch daily_limit
-  const [budgetConfig] = await db
-    .select({ dailyLimit: userBudgetConfig.dailyLimit })
-    .from(userBudgetConfig)
-    .where(eq(userBudgetConfig.userId, userId))
-    .limit(1)
   const dailyLimit = budgetConfig?.dailyLimit ?? 1200
-
-  // 2b. Fetch visible fixed categories for the month
-  const fixedCategories = await db
-    .select({ amount: userCategories.fixedAmount })
-    .from(userCategories)
-    .where(
-      and(
-        eq(userCategories.userId, userId),
-        eq(userCategories.isActive, true),
-        eq(userCategories.type, "fixed"),
-        or(
-          and(
-            eq(userCategories.carriesOver, true),
-            lte(userCategories.createdForMonth, month),
-          ),
-          and(
-            eq(userCategories.carriesOver, false),
-            eq(userCategories.createdForMonth, month),
-          ),
-        ),
-      ),
-    )
-
   const totalFixedBudget = fixedCategories.reduce(
     (sum, c) => sum + (c.amount ?? 0),
     0,
   )
   const totalDailyBudget = dailyLimit * dInMonth
   const totalBudget = totalFixedBudget + totalDailyBudget
-
-  // 2c. Total spent for the month
-  const [totalSpentResult] = await db
-    .select({ total: sql<number>`COALESCE(SUM(${expenses.amount}), 0)` })
-    .from(expenses)
-    .where(
-      and(
-        eq(expenses.userId, userId),
-        gte(expenses.date, startDate),
-        lte(expenses.date, endDate),
-      ),
-    )
   const totalSpent = Number(totalSpentResult?.total ?? 0)
   const remainingBudgetThisMonth = Math.max(0, totalBudget - totalSpent)
-
-  // 3. Compute spare money (live, never stored)
-  // spare_money = wallet + bank - remaining_budget_this_month
   const spareMoney = walletBalance + bankBalance - remainingBudgetThisMonth
-
-  // 4. Compute owed_to_you = SUM(amount) for outstanding loans
-  const [owedResult] = await db
-    .select({ total: sql<number>`COALESCE(SUM(${loansGiven.amount}), 0)` })
-    .from(loansGiven)
-    .where(
-      and(
-        eq(loansGiven.userId, userId),
-        eq(loansGiven.isRepaid, false),
-      ),
-    )
   const owedToYou = Number(owedResult?.total ?? 0)
-
-  // 5. Count outstanding loans
-  const [countResult] = await db
-    .select({ count: sql<number>`COUNT(*)` })
-    .from(loansGiven)
-    .where(
-      and(
-        eq(loansGiven.userId, userId),
-        eq(loansGiven.isRepaid, false),
-      ),
-    )
   const outstandingLoansCount = Number(countResult?.count ?? 0)
 
   return NextResponse.json({

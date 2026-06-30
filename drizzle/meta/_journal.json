@@ -15,6 +15,13 @@
       "when": 1782762345751,
       "tag": "0001_dark_wallop",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1782816134831,
+      "tag": "0002_even_robbie_robertson",
+      "breakpoints": true
     }
   ]
 }
