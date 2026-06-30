@@ -37,6 +37,7 @@ export async function GET(req: NextRequest) {
       .select({
         salary: userBudgetConfig.salary,
         dailyLimit: userBudgetConfig.dailyLimit,
+        additionalIncome: userBudgetConfig.additionalIncome,
       })
       .from(userBudgetConfig)
       .where(eq(userBudgetConfig.userId, userId))
@@ -95,6 +96,7 @@ export async function GET(req: NextRequest) {
 
   const salary = budgetConfig[0]?.salary ?? 0
   const dailyLimit = budgetConfig[0]?.dailyLimit ?? 1200
+  const additionalIncome = budgetConfig[0]?.additionalIncome ?? 0
 
   // ── Compute everything from the single expense result set ───────────────────
 
@@ -178,11 +180,12 @@ export async function GET(req: NextRequest) {
     (sum, c) => sum + (c.fixedAmount ?? 0),
     0,
   )
-  const totalBudget = totalFixedBudget + totalDailyPool
+  const totalBudget = totalFixedBudget + totalDailyPool + additionalIncome
 
   return NextResponse.json({
     month,
     salary,
+    additional_income: additionalIncome,
     days_in_month: dInMonth,
     daily_limit: dailyLimit,
     total_daily_pool: totalDailyPool,

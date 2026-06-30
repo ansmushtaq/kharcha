@@ -4,6 +4,7 @@ import { useState, useEffect } from "react"
 import { fetchWithTimeout } from "@/lib/fetchWithTimeout"
 import { formatPKR } from "@/lib/utils"
 import { ChevronDown, ChevronUp } from "lucide-react"
+import { Button } from "@/components/ui/button"
 
 /**
  * Dashboard card showing spare money and owed-to-you.
@@ -13,7 +14,7 @@ import { ChevronDown, ChevronUp } from "lucide-react"
  *
  * Headline: spare_money = wallet + bank - remaining_budget_this_month
  * Secondary: owed_to_you (separate, never added into spare_money)
- * Expandable breakdown: wallet, bank, remaining budget.
+ * Expandable breakdown: editable wallet, bank, remaining budget.
  *
  * Handles loading, error, empty (disabled), and data states.
  */
@@ -29,6 +30,10 @@ export function SpareMoneyCard() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
   const [expanded, setExpanded] = useState(false)
+  const [editingWallet, setEditingWallet] = useState(0)
+  const [editingBank, setEditingBank] = useState(0)
+  const [saving, setSaving] = useState(false)
+  const [saveMsg, setSaveMsg] = useState("")
 
   useEffect(() => {
     let cancelled = false
@@ -43,6 +48,8 @@ export function SpareMoneyCard() {
         const result = await res.json()
         if (cancelled) return
         setData(result)
+        setEditingWallet(result.wallet_balance ?? 0)
+        setEditingBank(result.bank_balance ?? 0)
       } catch {
         if (!cancelled) setError("Network error — could not load finances")
       } finally {
@@ -53,6 +60,29 @@ export function SpareMoneyCard() {
     load()
     return () => { cancelled = true }
   }, [])
+
+  async function saveBalances() {
+    setSaving(true)
+    setSaveMsg("")
+    try {
+      const res = await fetchWithTimeout("/api/finances", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ wallet_balance: editingWallet, bank_balance: editingBank }),
+      })
+      if (!res.ok) {
+        setSaveMsg("Save failed")
+        return
+      }
+      const result = await res.json()
+      setData(result)
+      setSaveMsg("Saved")
+    } catch {
+      setSaveMsg("Network error")
+    } finally {
+      setSaving(false)
+    }
+  }
 
   // ── Loading state ──
   if (loading) {
@@ -113,24 +143,46 @@ export function SpareMoneyCard() {
         )}
       </div>
 
-      {/* Expandable breakdown */}
+      {/* Expandable breakdown with inline editing */}
       {expanded && (
-        <div className="mt-3 space-y-1.5 border-t pt-3 text-sm">
-          <div className="flex justify-between">
-            <span className="text-muted-foreground">Wallet</span>
-            <span className="font-medium">{formatPKR(data.wallet_balance)}</span>
+        <div className="mt-3 space-y-2 border-t pt-3 text-sm">
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-muted-foreground shrink-0">Wallet</span>
+            <input
+              type="number"
+              value={editingWallet || ""}
+              onChange={(e) => setEditingWallet(Number(e.target.value) || 0)}
+              min={0}
+              step={1}
+              className="w-28 rounded border border-input bg-background px-2 py-1 text-right text-sm tabular-nums outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            />
+          </div>
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-muted-foreground shrink-0">Bank</span>
+            <input
+              type="number"
+              value={editingBank || ""}
+              onChange={(e) => setEditingBank(Number(e.target.value) || 0)}
+              min={0}
+              step={1}
+              className="w-28 rounded border border-input bg-background px-2 py-1 text-right text-sm tabular-nums outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            />
           </div>
           <div className="flex justify-between">
-            <span className="text-muted-foreground">Bank</span>
-            <span className="font-medium">{formatPKR(data.bank_balance)}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-muted-foreground">
-              Remaining budget this month
-            </span>
+            <span className="text-muted-foreground">Remaining budget</span>
             <span className="font-medium">
               {formatPKR(data.remaining_budget_this_month)}
             </span>
+          </div>
+          <div className="flex items-center gap-2 pt-1">
+            <Button onClick={saveBalances} disabled={saving} size="sm">
+              {saving ? "Saving…" : "Update Balances"}
+            </Button>
+            {saveMsg && (
+              <span className={`text-xs ${saveMsg === "Saved" ? "text-green-600 dark:text-green-400" : "text-destructive"}`}>
+                {saveMsg}
+              </span>
+            )}
           </div>
         </div>
       )}

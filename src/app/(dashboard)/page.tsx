@@ -29,6 +29,7 @@ interface VariableBreakdownEntry {
 interface Summary {
   month: string
   salary: number
+  additional_income: number
   days_in_month: number
   daily_limit: number
   total_daily_pool: number

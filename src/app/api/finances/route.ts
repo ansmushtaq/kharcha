@@ -47,9 +47,12 @@ export async function GET() {
       .where(eq(userFinances.userId, userId))
       .limit(1),
 
-    // 2. daily_limit
+    // 2. daily_limit & additional_income
     db
-      .select({ dailyLimit: userBudgetConfig.dailyLimit })
+      .select({
+        dailyLimit: userBudgetConfig.dailyLimit,
+        additionalIncome: userBudgetConfig.additionalIncome,
+      })
       .from(userBudgetConfig)
       .where(eq(userBudgetConfig.userId, userId))
       .limit(1),
@@ -123,12 +126,13 @@ export async function GET() {
   const updatedAt       = finances?.updatedAt       ?? null
 
   const dailyLimit = budgetConfig?.dailyLimit ?? 1200
+  const additionalIncome = budgetConfig?.additionalIncome ?? 0
   const totalFixedBudget = fixedCategories.reduce(
     (sum, c) => sum + (c.amount ?? 0),
     0,
   )
   const totalDailyBudget = dailyLimit * dInMonth
-  const totalBudget = totalFixedBudget + totalDailyBudget
+  const totalBudget = totalFixedBudget + totalDailyBudget + additionalIncome
   const totalSpent = Number(totalSpentResult?.total ?? 0)
   // Time-expired daily pool — days already passed can't be spent
   const dRemaining = daysRemaining(month, new Date())

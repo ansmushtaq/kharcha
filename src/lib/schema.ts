@@ -62,14 +62,15 @@ export const userCategories = pgTable(
 // spare money or budget calculations (those use wallet/bank balances).
 
 export const userBudgetConfig = pgTable('user_budget_config', {
-  id:         uuid('id').primaryKey().defaultRandom(),
-  userId:     uuid('user_id')
-                .notNull()
-                .references(() => users.id, { onDelete: 'cascade' })
-                .unique(),
-  salary:     integer('salary').notNull().default(0),          // PKR, monthly income — informational
-  dailyLimit: integer('daily_limit').notNull().default(1200),  // PKR/day
-  updatedAt:  timestamp('updated_at').defaultNow().notNull(),
+  id:               uuid('id').primaryKey().defaultRandom(),
+  userId:           uuid('user_id')
+                      .notNull()
+                      .references(() => users.id, { onDelete: 'cascade' })
+                      .unique(),
+  salary:           integer('salary').notNull().default(0),             // PKR, monthly income — informational
+  dailyLimit:       integer('daily_limit').notNull().default(1200),     // PKR/day
+  additionalIncome: integer('additional_income').notNull().default(0),  // PKR, extra money added to monthly budget
+  updatedAt:        timestamp('updated_at').defaultNow().notNull(),
 })
 
 // ─── Expenses ─────────────────────────────────────────────────────────────────

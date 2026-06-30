@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 export function SalaryDailyLimitInput() {
   const [salary, setSalary] = useState(0)
   const [limit, setLimit] = useState(1200)
+  const [additionalIncome, setAdditionalIncome] = useState(0)
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState("")
 
@@ -15,6 +16,7 @@ export function SalaryDailyLimitInput() {
       .then((d) => {
         setSalary(d.salary ?? 0)
         setLimit(d.daily_limit ?? 1200)
+        setAdditionalIncome(d.additional_income ?? 0)
       })
       .catch(() => {})
   }, [])
@@ -25,7 +27,7 @@ export function SalaryDailyLimitInput() {
     const res = await fetch("/api/budget-config", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ salary, daily_limit: limit }),
+      body: JSON.stringify({ salary, daily_limit: limit, additional_income: additionalIncome }),
     })
     if (res.ok) {
       setMessage("Saved")
@@ -71,6 +73,20 @@ export function SalaryDailyLimitInput() {
         <Button onClick={save} disabled={saving} size="sm" className="min-h-[44px]">
           {saving ? "Saving…" : "Save"}
         </Button>
+      </div>
+
+      {/* Additional Income */}
+      <div className="flex items-center gap-3">
+        <span className="min-w-[60px] text-sm text-muted-foreground">Extra PKR</span>
+        <input
+          type="number"
+          value={additionalIncome || ""}
+          onChange={(e) => setAdditionalIncome(Number(e.target.value) || 0)}
+          min={0}
+          step={1}
+          className="w-32 rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        />
+        <span className="text-sm text-muted-foreground">carryover / extra this month</span>
       </div>
 
       <p className="text-xs text-muted-foreground">
